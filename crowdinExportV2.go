@@ -48,7 +48,7 @@ func animation(c *crowdin.Crowdin) {
 	for {
 		select {
 		default:
-			str := fmt.Sprintf("%s %d%", sequence[idx], c.GetPercentBuildProgress())
+			str := fmt.Sprintf("%s %d%%", sequence[idx], c.GetPercentBuildProgress())
 			fmt.Printf("%s%s", str, strings.Repeat("\b", len(str)))
 			// fmt.Printf("%s %d", sequence[idx], c.GetProjectId2())
 			idx = (idx + 1) % len(sequence)
@@ -92,7 +92,7 @@ func main() {
 	checkFlags.StringVar(&proxy, "p", "", usageProxy+" (shorthand)")
 	checkFlags.BoolVar(&nospinFlg, "nospin", false, usageNospin)
 	checkFlags.BoolVar(&nospinFlg, "n", false, usageNospin+" (shorthand)")
-	checkFlags.BoolVar(&nospinFlg, "url", false, usageNospin)
+	checkFlags.StringVar(&uRL, "url", "", usageUrl)
 	checkFlags.StringVar(&uRL, "u", "", usageUrl+" (shorthand)")
 	checkFlags.StringVar(&debug, "debug", "", usageDebug)
 	checkFlags.StringVar(&debug, "d", "", usageDebug+" (shorthand)")
@@ -105,7 +105,7 @@ func main() {
 	checkFlags.Parse(os.Args[1:])
 
 	if versionFlg {
-		fmt.Printf("Version %s\n", "2020-03  v2.1.0")
+		fmt.Printf("Version %s\n", "2021-01  v2.2.1")
 		os.Exit(0)
 	}
 
@@ -144,7 +144,7 @@ func main() {
 
 	if buildFlg {
 		// Request a build
-		buildId, err = api.BuildAllLg(timeoutsec)
+		buildId, err = api.BuildAllLg(timeoutsec, true, true) // Export translated and approved strings only
 		if err != nil {
 			fmt.Printf("\ncrowdinExportV2() build request error\n%s\n%s\n\n", buildId, err)
 			os.Exit(1)
