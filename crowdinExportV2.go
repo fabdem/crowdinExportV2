@@ -15,17 +15,18 @@ package main
 //      Option -v version
 //      Option -b to build the project
 //            Optionnaly build the project and download the zip with all languages.
-//			Option -u to specify the api url. If option not used the default api url used will be "https://crowdin.api.V2"
+//		Option -u to specify the api url. If option not used the default api url used will be "https://crowdin.api.V2"
 //      Option -p <proxy url> to use a proxy.
 //      Option -t <timeout in second>. Defines a timeout for each communication with the server. This doesn't represent an overall timeout. Default timeout set in lib: 40s.
-//			Option -n no spinning thingy while we wait for the file (for unattended usage).
-//			Option -d <path/file> log debug info in file
+//		Option -n no spinning thingy while we wait for the file (for unattended usage).
+//		Option -d <path/file> log debug info in file
 //
 //      Returns 1 if there was an error
 //
 //      If option built is used, returns "built" or "skipped" if the command is successful and depending if the build was actually done.
 //
-//	cross compilation AMD64:  env GOOS=windows GOARCH=amd64 go build crowdinExportV2.go
+//	Prior to compil, install lib: go get github.com/fabdem/go-crowdinv2
+//	Linux: Cross compilation AMD64:  env GOOS=windows GOARCH=amd64 go build crowdinExportV2.go
 
 import (
 	"flag"
@@ -41,9 +42,7 @@ var idx int = 0
 var finishChan chan struct{}
 
 func animation(c *crowdin.Crowdin) {
-	//sequence := [...]string{"\b|", "\b/", "\b-", "\b\\"}
 	sequence := [...]string{"|", "/", "-", "\\"}
-	// sequence := [...]string {" 1"," 2"," 3"," 4"}
 
 	for {
 		select {
@@ -105,7 +104,7 @@ func main() {
 	checkFlags.Parse(os.Args[1:])
 
 	if versionFlg {
-		fmt.Printf("Version %s\n", "2021-01  v2.2.1")
+		fmt.Printf("Version %s\n", "2021-01  v2.2.3")
 		os.Exit(0)
 	}
 
