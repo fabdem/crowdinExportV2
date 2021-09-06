@@ -2,7 +2,7 @@ package main
 
 //	F.Demurger 2020-02
 //
-//	Export a Crowdin project languages and files - uses Crowdin API V2.
+//	Export a Crowdin project languages and files (translated and approved strings only) - uses Crowdin API V2.
 //
 //	crowdinExport [options] <access token> <project Id> <zip file path/name>
 //
@@ -20,6 +20,7 @@ package main
 //      Option -t <timeout in second>. Defines a timeout for each communication with the server. This doesn't represent an overall timeout. Default timeout set in lib: 40s.
 //		Option -n no spinning thingy while we wait for the file (for unattended usage).
 //		Option -d <path/file> log debug info in file
+//      Option -c if used, exports completly translated files only.
 //
 //      Returns 1 if there was an error
 //
@@ -69,6 +70,7 @@ func main() {
 	var nospinFlg bool
 	var uRL string
 	var debug string
+	var completedFilesFlg bool
 
 	const usageVersion = "Display Version"
 	const usageBuild = "Request a build"
@@ -77,6 +79,7 @@ func main() {
 	const usageNospin = "No spinning |"
 	const usageUrl = "Specify the API URL"
 	const usageDebug = "Store Debug info in a file followed with path and filename"
+	const usageCompletedFiles = "Exports completely translated files only (to be used along with -b option)"
 
 	// Have to create a specific set, the default one is poluted by some test stuff from another lib (?!)
 	checkFlags := flag.NewFlagSet("check", flag.ExitOnError)
@@ -95,6 +98,8 @@ func main() {
 	checkFlags.StringVar(&uRL, "u", "", usageUrl+" (shorthand)")
 	checkFlags.StringVar(&debug, "debug", "", usageDebug)
 	checkFlags.StringVar(&debug, "d", "", usageDebug+" (shorthand)")
+	checkFlags.BoolVar(&completedFilesFlg, "completedFiles", false, usageCompletedFiles)
+	checkFlags.BoolVar(&completedFilesFlg, "c", false, usageCompletedFiles+" (shorthand)")
 	checkFlags.Usage = func() {
 		fmt.Printf("Usage: %s [opt] <key> <project ID> <path and name of zip>\n", os.Args[0])
 		checkFlags.PrintDefaults()
@@ -104,7 +109,7 @@ func main() {
 	checkFlags.Parse(os.Args[1:])
 
 	if versionFlg {
-		fmt.Printf("Version %s\n", "2021-01  v2.2.3")
+		fmt.Printf("Version %s\n", "2021-09  v2.3.0")
 		os.Exit(0)
 	}
 
@@ -143,7 +148,11 @@ func main() {
 
 	if buildFlg {
 		// Request a build
-		buildId, err = api.BuildAllLg(timeoutsec, true, true) // Export translated and approved strings only
+		if !completedFilesFlg {
+			buildId, err = api.BuildAllLg(timeoutsec, true, true, false) // Export translated and approved strings only
+		} else {
+			buildId, err = api.BuildAllLg(timeoutsec, false, true, true) // Export approved strings only and fully translated files only
+		}
 		if err != nil {
 			fmt.Printf("\ncrowdinExportV2() build request error\n%s\n%s\n\n", buildId, err)
 			os.Exit(1)
