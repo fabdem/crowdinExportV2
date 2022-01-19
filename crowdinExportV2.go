@@ -21,6 +21,7 @@ package main
 //		Option -n no spinning thingy while we wait for the file (for unattended usage).
 //		Option -d <path/file> log debug info in file
 //      Option -c if used, exports completly translated files only.
+//		Option -a <number of proofread step approvals required> minimum number of proofread approvals (from workflow) required to export a string.
 //
 //      Returns 1 if there was an error
 //
@@ -32,7 +33,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/fabdem/go-crowdinv2"
+	//"github.com/fabdem/go-crowdinv2"
+	"go-crowdinv2"
 	"os"
 	"strconv"
 	"strings"
@@ -71,15 +73,17 @@ func main() {
 	var uRL string
 	var debug string
 	var completedFilesFlg bool
+	var approvNber int
 
 	const usageVersion = "Display Version"
 	const usageBuild = "Request a build"
-	const usageProxy = "Use a proxy - followed with url"
+	const usageProxy = "Use a proxy - followed by url"
 	const usageTimeout = "Set the build timeout in seconds (default 50s)."
 	const usageNospin = "No spinning |"
 	const usageUrl = "Specify the API URL"
 	const usageDebug = "Store Debug info in a file followed with path and filename"
 	const usageCompletedFiles = "Exports completely translated files only (to be used along with -b option)"
+	const usageApprovNber = "followed by the number of proofread step approvals required to export a string"
 
 	// Have to create a specific set, the default one is poluted by some test stuff from another lib (?!)
 	checkFlags := flag.NewFlagSet("check", flag.ExitOnError)
@@ -100,6 +104,8 @@ func main() {
 	checkFlags.StringVar(&debug, "d", "", usageDebug+" (shorthand)")
 	checkFlags.BoolVar(&completedFilesFlg, "completedFiles", false, usageCompletedFiles)
 	checkFlags.BoolVar(&completedFilesFlg, "c", false, usageCompletedFiles+" (shorthand)")
+	checkFlags.IntVar(&approvNber, "approvals", 1, usageApprovNber)
+	checkFlags.IntVar(&approvNber, "a", 1, usageApprovNber+" (shorthand)")
 	checkFlags.Usage = func() {
 		fmt.Printf("Usage: %s [opt] <key> <project ID> <path and name of zip>\n", os.Args[0])
 		checkFlags.PrintDefaults()
@@ -109,7 +115,7 @@ func main() {
 	checkFlags.Parse(os.Args[1:])
 
 	if versionFlg {
-		fmt.Printf("Version %s\n", "2021-09  v2.3.0")
+		fmt.Printf("Version %s\n", "2021-12  v2.4.0")
 		os.Exit(0)
 	}
 
@@ -122,6 +128,7 @@ func main() {
 		os.Exit(0)
 	}
 	zipfilename := os.Args[index-1]
+	// fmt.Printf("Project=%d key=%s zip=%s\n", projectId, key, zipfilename)
 
 	// Create a connection
 	api, err := crowdin.New(key, projectId, uRL, proxy)
@@ -149,9 +156,9 @@ func main() {
 	if buildFlg {
 		// Request a build
 		if !completedFilesFlg {
-			buildId, err = api.BuildAllLg(timeoutsec, true, true, false) // Export translated and approved strings only
+			buildId, err = api.BuildAllLg(timeoutsec, true, approvNber, false) // Export translated and approved strings only
 		} else {
-			buildId, err = api.BuildAllLg(timeoutsec, false, true, true) // Export approved strings only and fully translated files only
+			buildId, err = api.BuildAllLg(timeoutsec, false, approvNber, true) // Export approved strings only and fully translated files only
 		}
 		if err != nil {
 			fmt.Printf("\ncrowdinExportV2() build request error\n%s\n%s\n\n", buildId, err)
