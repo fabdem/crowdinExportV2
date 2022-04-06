@@ -33,8 +33,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	//"github.com/fabdem/go-crowdinv2"
-	"go-crowdinv2"
+	"github.com/fabdem/go-crowdinv2"
 	"os"
 	"strconv"
 	"strings"
@@ -71,6 +70,7 @@ func main() {
 	var timeoutsec int
 	var nospinFlg bool
 	var uRL string
+	var folder string
 	var debug string
 	var completedFilesFlg bool
 	var approvNber int
@@ -84,6 +84,7 @@ func main() {
 	const usageDebug = "Store Debug info in a file followed with path and filename"
 	const usageCompletedFiles = "Exports completely translated files only (to be used along with -b option)"
 	const usageApprovNber = "followed by the number of proofread step approvals required to export a string"
+	const usageFolder = "to build a folder rather than the entire project. Need to provide full path to folder (e.g. /main folder/other folder)."
 
 	// Have to create a specific set, the default one is poluted by some test stuff from another lib (?!)
 	checkFlags := flag.NewFlagSet("check", flag.ExitOnError)
@@ -106,6 +107,8 @@ func main() {
 	checkFlags.BoolVar(&completedFilesFlg, "c", false, usageCompletedFiles+" (shorthand)")
 	checkFlags.IntVar(&approvNber, "approvals", 1, usageApprovNber)
 	checkFlags.IntVar(&approvNber, "a", 1, usageApprovNber+" (shorthand)")
+	checkFlags.StringVar(&folder, "folder", "", usageUrl)
+	checkFlags.StringVar(&folder, "f", "", usageFolder+" (shorthand)")
 	checkFlags.Usage = func() {
 		fmt.Printf("Usage: %s [opt] <key> <project ID> <path and name of zip>\n", os.Args[0])
 		checkFlags.PrintDefaults()
@@ -115,7 +118,7 @@ func main() {
 	checkFlags.Parse(os.Args[1:])
 
 	if versionFlg {
-		fmt.Printf("Version %s\n", "2021-12  v2.4.0")
+		fmt.Printf("Version %s\n", "2022-04  v2.5.0")
 		os.Exit(0)
 	}
 
@@ -155,11 +158,21 @@ func main() {
 
 	if buildFlg {
 		// Request a build
-		if !completedFilesFlg {
-			buildId, err = api.BuildAllLg(timeoutsec, true, approvNber, false) // Export translated and approved strings only
-		} else {
-			buildId, err = api.BuildAllLg(timeoutsec, false, approvNber, true) // Export approved strings only and fully translated files only
+		opt := crowdin.BuildTranslationAllLgOptions{
+			BuildTO	:				    time.Duration(timeoutsec) * time.Second,
+			MinApprovalSteps: 			approvNber,
+			FolderName:					folder,
 		}
+		if !completedFilesFlg {
+			// Export translated and approved strings only
+			opt.TranslatedOnly = true
+			opt.FullyTranslatedFilesOnly = false
+		} else {
+			 // Export approved strings only and fully translated files only
+			opt.TranslatedOnly = false
+			opt.FullyTranslatedFilesOnly = true
+		}
+		buildId, err = api.BuildTranslationAllLg(opt) 
 		if err != nil {
 			fmt.Printf("\ncrowdinExportV2() build request error\n%s\n%s\n\n", buildId, err)
 			os.Exit(1)
